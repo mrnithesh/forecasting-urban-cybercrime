@@ -10,10 +10,10 @@ const DashboardHeader = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Spatio-Temporal Forecasting of Urban Cybercrime
+              Spatio-Temporal Forecasting of Urban Cybercrime in India
             </h1>
             <p className="text-sm text-muted-foreground">
-              Forecasting and Visualizing Cybercrime Trends in Urban Regions
+              Real-time Monitoring and Predictive Analysis of Cybercrime Across Major Indian Cities
             </p>
           </div>
         </div>
