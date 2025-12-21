@@ -144,8 +144,8 @@ class DataProcessor:
                 monthly_values = self._distribute_yearly_to_monthly(yearly_total)
                 
                 # Determine how many months to generate
-                # Full year for 2016-2024, only up to June (6 months) for 2025
-                months_to_generate = 6 if year == 2025 else 12
+                # Full year for 2016-2024, only up to November (11 months) for 2025
+                months_to_generate = 11 if year == 2025 else 12
                 
                 # Create records for each month
                 for month in range(1, months_to_generate + 1):
@@ -304,9 +304,9 @@ class DataProcessor:
                     print(f"⚠ Mismatch for {state} {year}: {yearly_total} vs {monthly_total}")
 
             # Validate 2025 (Partial year - only compare if we want exact match, 
-            # but here yearly_total is for full year, monthly is for 6 months)
-            # We skip exact validation for 2025 total matching since we only generated 6 months
-            # But we could check if monthly_total ≈ 0.5 * yearly_total (roughly)
+            # but here yearly_total is for full year, monthly is for 11 months)
+            # We skip exact validation for 2025 total matching since we only generated 11 months
+            # But we could check if monthly_total ≈ 11/12 * yearly_total (roughly)
         
         print("✓ Data validation complete")
 

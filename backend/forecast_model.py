@@ -110,8 +110,16 @@ class CybercrimeForecaster:
         historical_df = historical_df.sort_values('ds').tail(3)
         
         # Add historical actuals with predictions (for validation)
+        # Using a set to track processed dates to avoid duplicates
+        processed_dates = set()
+        
         for _, row in historical_df.iterrows():
             date_str = row['ds'].strftime('%Y-%m')
+            
+            if date_str in processed_dates:
+                continue
+                
+            processed_dates.add(date_str)
             actual = int(row['y'])
             
             # Find corresponding prediction
@@ -127,10 +135,16 @@ class CybercrimeForecaster:
             })
         
         # Add future forecasts (no actuals)
+        # Filter out dates that we already processed in historical section
         future_forecasts = forecast.tail(periods)
         
         for _, row in future_forecasts.iterrows():
             date_str = row['ds'].strftime('%Y-%m')
+            
+            if date_str in processed_dates:
+                continue
+            
+            processed_dates.add(date_str)
             
             result.append({
                 'date': date_str,

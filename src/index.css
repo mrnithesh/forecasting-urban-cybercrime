@@ -127,3 +127,148 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Blog Content Styling */
+@layer components {
+  .blog-content {
+    @apply prose prose-slate dark:prose-invert max-w-none;
+  }
+
+  .blog-content h1 {
+    @apply text-3xl font-bold text-foreground mt-8 mb-4 first:mt-0;
+  }
+
+  .blog-content h2 {
+    @apply text-2xl font-semibold text-foreground mt-8 mb-4 border-b border-border pb-2;
+  }
+
+  .blog-content h3 {
+    @apply text-xl font-semibold text-foreground mt-6 mb-3;
+  }
+
+  .blog-content h4 {
+    @apply text-lg font-medium text-foreground mt-4 mb-2;
+  }
+
+  .blog-content p {
+    @apply text-base leading-relaxed text-muted-foreground mb-4;
+  }
+
+  .blog-content ul, .blog-content ol {
+    @apply mb-4 pl-6;
+  }
+
+  .blog-content li {
+    @apply mb-2 text-muted-foreground;
+  }
+
+  .blog-content ul li {
+    @apply list-disc;
+  }
+
+  .blog-content ol li {
+    @apply list-decimal;
+  }
+
+  .blog-content blockquote {
+    @apply border-l-4 border-primary pl-4 italic text-muted-foreground bg-muted/50 py-2 px-4 rounded-r-md my-4;
+  }
+
+  .blog-content strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .blog-content em {
+    @apply italic text-foreground;
+  }
+
+  .blog-content code {
+    @apply bg-muted text-sm px-2 py-1 rounded font-mono text-foreground;
+  }
+
+  .blog-content pre {
+    @apply bg-muted p-4 rounded-lg overflow-x-auto my-4;
+  }
+
+  .blog-content pre code {
+    @apply bg-transparent p-0;
+  }
+
+  .blog-content a {
+    @apply text-primary hover:text-primary/80 underline decoration-primary/30 hover:decoration-primary/60 transition-colors;
+  }
+
+  .blog-content hr {
+    @apply border-border my-8;
+  }
+
+  /* Custom highlight for important terms */
+  .blog-content .highlight {
+    @apply bg-primary/10 text-primary px-1 py-0.5 rounded font-medium;
+  }
+
+  /* Warning boxes */
+  .blog-content .warning {
+    @apply bg-warning/10 border border-warning/20 rounded-lg p-4 my-4;
+  }
+
+  .blog-content .warning::before {
+    content: "⚠️";
+    @apply mr-2 font-semibold;
+  }
+
+  /* Info boxes */
+  .blog-content .info {
+    @apply bg-primary/10 border border-primary/20 rounded-lg p-4 my-4;
+  }
+
+  .blog-content .info::before {
+    content: "ℹ️";
+    @apply mr-2 font-semibold;
+  }
+
+  /* Success boxes */
+  .blog-content .success {
+    @apply bg-success/10 border border-success/20 rounded-lg p-4 my-4;
+  }
+
+  .blog-content .success::before {
+    content: "✅";
+    @apply mr-2 font-semibold;
+  }
+
+  /* Blog card improvements */
+  .blog-card {
+    @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+  }
+
+  .blog-card:hover .blog-card-image {
+    @apply scale-105;
+  }
+
+  /* Reading progress indicator */
+  .reading-progress {
+    @apply fixed top-0 left-0 w-full h-1 bg-muted z-50;
+  }
+
+  .reading-progress-bar {
+    @apply h-full bg-primary transition-all duration-300 ease-out;
+  }
+
+  /* Table styling */
+  .blog-content table {
+    @apply w-full border-collapse border border-border rounded-lg overflow-hidden my-4;
+  }
+
+  .blog-content th {
+    @apply bg-muted text-left p-3 font-semibold text-foreground border-b border-border;
+  }
+
+  .blog-content td {
+    @apply p-3 border-b border-border text-muted-foreground;
+  }
+
+  .blog-content tr:hover {
+    @apply bg-muted/50;
+  }
+}
