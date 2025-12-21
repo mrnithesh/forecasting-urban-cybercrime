@@ -127,6 +127,7 @@ def get_incidents():
     Query Parameters:
         region: City name or "All Regions" (default: "All Regions")
         crime_type: Specific crime type or "All Types" (default: "All Types")
+        year: Specific year (e.g., "2024") or "all" (default: "all")
         format: "trend" for time series, "regional" for distribution, "crime-type" for breakdown
     
     Returns:
@@ -138,10 +139,11 @@ def get_incidents():
         
         region = request.args.get('region', 'All Regions')
         crime_type = request.args.get('crime_type', 'All Types')
+        year = request.args.get('year', 'all')
         data_format = request.args.get('format', 'trend')
         
         # Get base data
-        incidents = data_processor.get_incidents_by_region(region)
+        incidents = data_processor.get_incidents_by_region(region, year)
         
         if data_format == 'trend':
             # Time series format for incident trend chart
@@ -174,19 +176,27 @@ def get_incidents():
         elif data_format == 'regional':
             # Regional distribution
             if region == 'All Regions':
-                # Get data for each city
-                cities = [c for c in data_processor.get_available_regions() if c != 'All Regions']
+                # Get data for each state (using the already filtered 'incidents' might be wrong for regional comparison if we pre-filtered by region?)
+                # Actually, if region is 'All Regions', 'incidents' contains aggregated data over time.
+                # To get regional breakdown, we need data per region.
+                
+                # So we need to iterate available regions and get their totals for the specific year
+                states = [c for c in data_processor.get_available_regions() if c != 'All Regions']
                 regional_data = []
                 
-                for city in cities:
-                    city_data = data_processor.get_incidents_by_region(city)
+                for state in states:
+                    # Get data for this specific state and year
+                    state_data = data_processor.get_incidents_by_region(state, year)
                     
                     if crime_type != 'All Types':
-                        total = int(city_data[crime_type].sum())
+                        total = int(state_data[crime_type].sum())
                     else:
-                        total = int(city_data['incidents'].sum())
+                        total = int(state_data['incidents'].sum())
                     
-                    # Determine risk level
+                    # Determine risk level (thresholds might need adjustment for yearly vs monthly vs all-time)
+                    # Simple heuristic: adjust threshold based on number of months? 
+                    # For now keep static thresholds or maybe adjust if year != 'all'
+                    
                     if total > 3500:
                         risk = "High"
                     elif total > 2000:
@@ -195,7 +205,7 @@ def get_incidents():
                         risk = "Low"
                     
                     regional_data.append({
-                        'region': city,
+                        'region': state,
                         'incidents': total,
                         'risk': risk
                     })
@@ -276,6 +286,7 @@ def get_stats():
     Query Parameters:
         region: City name or "All Regions" (default: "All Regions")
         crime_type: Specific crime type or "All Types" (default: "All Types")
+        year: Specific year or "all" (default: "all")
     
     Returns:
         JSON object with statistics
@@ -286,9 +297,10 @@ def get_stats():
         
         region = request.args.get('region', 'All Regions')
         crime_type = request.args.get('crime_type', 'All Types')
+        year = request.args.get('year', 'all')
         
         # Get incidents data
-        incidents = data_processor.get_incidents_by_region(region)
+        incidents = data_processor.get_incidents_by_region(region, year)
         
         # Calculate total incidents
         if crime_type != 'All Types':
@@ -306,14 +318,14 @@ def get_stats():
         
         # Find top region (if showing all regions)
         if region == 'All Regions':
-            cities = [c for c in data_processor.get_available_regions() if c != 'All Regions']
-            city_totals = {}
+            states = [c for c in data_processor.get_available_regions() if c != 'All Regions']
+            state_totals = {}
             
-            for city in cities:
-                city_data = data_processor.get_incidents_by_region(city)
-                city_totals[city] = int(city_data['incidents'].sum())
+            for state in states:
+                state_data = data_processor.get_incidents_by_region(state, year)
+                state_totals[state] = int(state_data['incidents'].sum())
             
-            top_region = max(city_totals, key=city_totals.get) if city_totals else "Mumbai"
+            top_region = max(state_totals, key=state_totals.get) if state_totals else "Maharashtra"
         else:
             top_region = region
         
@@ -327,7 +339,12 @@ def get_stats():
         else:
             risk_level = "Low"
         
-        # Get forecast summary
+        # Get forecast summary (Forecasts always look ahead, usually ignoring past year filters for training, or maybe using filtered data?)
+        # Typically forecasts are based on historical data up to now. 
+        # If a specific past year is selected, forecasting might not make sense or should be "what was predicted then".
+        # For simplicity, we keep forecast based on full history or just return empty if looking at past year?
+        # Let's keep forecast based on full history for now as it's "future forecast".
+        
         forecast_data = forecaster.forecast_by_region(data_processor, region, periods=6)
         forecast_summary = forecaster.get_forecast_summary(forecast_data)
         

@@ -105,13 +105,18 @@ export async function getCrimeTypes(): Promise<string[]> {
  */
 export async function getIncidentTrend(
   region: string = 'All Regions',
-  crimeType: string = 'All Types'
+  crimeType: string = 'All Types',
+  year: string = 'all'
 ): Promise<IncidentData[]> {
   const params = new URLSearchParams({
     region,
     crime_type: crimeType,
     format: 'trend',
   });
+  
+  if (year !== 'all') {
+    params.append('year', year);
+  }
   
   return apiFetch(`/api/incidents?${params}`);
 }
@@ -121,13 +126,18 @@ export async function getIncidentTrend(
  */
 export async function getCrimeTypeDistribution(
   region: string = 'All Regions',
-  crimeType: string = 'All Types'
+  crimeType: string = 'All Types',
+  year: string = 'all'
 ): Promise<CrimeTypeData[]> {
   const params = new URLSearchParams({
     region,
     crime_type: crimeType,
     format: 'crime-type',
   });
+  
+  if (year !== 'all') {
+    params.append('year', year);
+  }
   
   return apiFetch(`/api/incidents?${params}`);
 }
@@ -137,13 +147,18 @@ export async function getCrimeTypeDistribution(
  */
 export async function getRegionalDistribution(
   region: string = 'All Regions',
-  crimeType: string = 'All Types'
+  crimeType: string = 'All Types',
+  year: string = 'all'
 ): Promise<RegionalData[]> {
   const params = new URLSearchParams({
     region,
     crime_type: crimeType,
     format: 'regional',
   });
+  
+  if (year !== 'all') {
+    params.append('year', year);
+  }
   
   return apiFetch(`/api/incidents?${params}`);
 }
@@ -173,12 +188,17 @@ export async function getForecast(
  */
 export async function getStats(
   region: string = 'All Regions',
-  crimeType: string = 'All Types'
+  crimeType: string = 'All Types',
+  year: string = 'all'
 ): Promise<StatsData> {
   const params = new URLSearchParams({
     region,
     crime_type: crimeType,
   });
+  
+  if (year !== 'all') {
+    params.append('year', year);
+  }
   
   return apiFetch(`/api/stats?${params}`);
 }
@@ -200,7 +220,8 @@ export async function clearCache(): Promise<{ message: string }> {
  */
 export async function getAllDashboardData(
   region: string = 'All Regions',
-  crimeType: string = 'All Types'
+  crimeType: string = 'All Types',
+  year: string = 'all'
 ) {
   try {
     const [
@@ -212,11 +233,11 @@ export async function getAllDashboardData(
       regions,
       crimeTypes,
     ] = await Promise.all([
-      getIncidentTrend(region, crimeType),
-      getCrimeTypeDistribution(region, crimeType),
-      getRegionalDistribution(region, crimeType),
+      getIncidentTrend(region, crimeType, year),
+      getCrimeTypeDistribution(region, crimeType, year),
+      getRegionalDistribution(region, crimeType, year),
       getForecast(region, 6, crimeType),
-      getStats(region, crimeType),
+      getStats(region, crimeType, year),
       getRegions(),
       getCrimeTypes(),
     ]);

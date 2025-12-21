@@ -24,8 +24,8 @@ const RegionalHeatmap = ({ data }: RegionalHeatmapProps) => {
   return (
     <Card className="transition-all duration-300 hover:shadow-md">
       <CardHeader>
-        <CardTitle>Regional Distribution</CardTitle>
-        <CardDescription>Incident count and risk level by region</CardDescription>
+        <CardTitle>State-wise Distribution</CardTitle>
+        <CardDescription>Incident count and risk level by state</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

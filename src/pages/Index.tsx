@@ -24,6 +24,7 @@ import {
 const Index = () => {
   const [selectedRegion, setSelectedRegion] = useState("All Regions");
   const [selectedCrimeType, setSelectedCrimeType] = useState("All Types");
+  const [selectedYear, setSelectedYear] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [useApi, setUseApi] = useState(true);
@@ -59,7 +60,7 @@ const Index = () => {
       setError(null);
 
       try {
-        const data = await apiClient.getAllDashboardData(selectedRegion, selectedCrimeType);
+        const data = await apiClient.getAllDashboardData(selectedRegion, selectedCrimeType, selectedYear);
         
         setTrendData(data.trendData);
         setCrimeTypeData(data.crimeTypeData);
@@ -86,7 +87,7 @@ const Index = () => {
     };
 
     fetchData();
-  }, [selectedRegion, selectedCrimeType, useApi]);
+  }, [selectedRegion, selectedCrimeType, selectedYear, useApi]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,8 +128,10 @@ const Index = () => {
               crimeTypes={crimeTypes}
               selectedRegion={selectedRegion}
               selectedCrimeType={selectedCrimeType}
+              selectedYear={selectedYear}
               onRegionChange={setSelectedRegion}
               onCrimeTypeChange={setSelectedCrimeType}
+              onYearChange={setSelectedYear}
             />
 
             {/* Charts Grid */}

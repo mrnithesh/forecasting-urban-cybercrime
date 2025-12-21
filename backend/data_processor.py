@@ -19,16 +19,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import os
 
-# State to City mapping with weights (for states with multiple major cities)
-STATE_TO_CITY_MAPPING = {
-    "Telangana": [("Hyderabad", 1.0)],
-    "Karnataka": [("Bangalore", 1.0)],
-    "Maharashtra": [("Mumbai", 0.60), ("Pune", 0.40)],
-    "Uttar Pradesh": [("Delhi NCR", 0.35), ("Agra", 0.15)],  # Delhi NCR adjacent
-    "Tamil Nadu": [("Chennai", 1.0)],
-    "West Bengal": [("Kolkata", 1.0)],
-}
-
 # Crime type mapping from dataset to frontend categories
 CRIME_TYPE_MAPPING = {
     "Fraud": "UPI Fraud",
@@ -92,14 +82,14 @@ class DataProcessor:
         print(f"✓ Loaded {len(self.crime_type_df)} crime distribution records")
         
 
-    # STATE → CITY MAPPING
+    # SYNTHETIC DATA GENERATION
    
-    def map_states_to_cities(self):
+    def generate_synthetic_yearly_data(self):
         """
-        Map state-level data to city-level data using population weights.
-        SYNTHETIC COMPONENT: City-level breakdown from state totals
+        Extend yearly data to include 2016-2017 (backcasting) and 2023-2025 (forecasting).
+        SYNTHETIC COMPONENT: Yearly totals extension
         """
-        city_data = []
+        extended_data = []
         
         # Filter only state rows (exclude totals)
         state_rows = self.state_yearly_df[self.state_yearly_df['Categroy'] == 'State']
@@ -107,28 +97,35 @@ class DataProcessor:
         for _, row in state_rows.iterrows():
             state_name = row['State/UT']
             
-            # Only process states we have city mappings for
-            if state_name in STATE_TO_CITY_MAPPING:
-                cities = STATE_TO_CITY_MAPPING[state_name]
-                
-                # Distribute incidents across cities based on weights
-                for city_name, weight in cities:
-                    city_record = {
-                        'city': city_name,
-                        'state': state_name,
-                        '2018': int(row['2018'] * weight),
-                        '2019': int(row['2019'] * weight),
-                        '2020': int(row['2020'] * weight),
-                        '2021': int(row['2021'] * weight),
-                        '2022': int(row['2022'] * weight),
-                    }
-                    city_data.append(city_record)
+            # Base years data
+            base_data = {
+                '2018': row['2018'],
+                '2019': row['2019'],
+                '2020': row['2020'],
+                '2021': row['2021'],
+                '2022': row['2022']
+            }
+            
+            # Backcast 2016-2017 (~10% reduction per year backwards)
+            base_2018 = base_data['2018']
+            base_data['2017'] = int(base_2018 * 0.90)
+            base_data['2016'] = int(base_data['2017'] * 0.90)
+            
+            # Forecast 2023-2025 (~10% growth per year forwards)
+            base_2022 = base_data['2022']
+            base_data['2023'] = int(base_2022 * 1.10)
+            base_data['2024'] = int(base_data['2023'] * 1.10)
+            base_data['2025'] = int(base_data['2024'] * 1.10)
+            
+            record = {'state': state_name}
+            record.update(base_data)
+            extended_data.append(record)
         
-        return pd.DataFrame(city_data)
+        return pd.DataFrame(extended_data)
     
     # YEARLY → MONTHLY DISAGGREGATION
     
-    def generate_monthly_data(self, city_yearly_df):
+    def generate_monthly_data(self, state_yearly_df):
         """ Convert yearly totals to monthly data with realistic seasonality
         Convert yearly totals to monthly data with realistic seasonality.
         SYNTHETIC COMPONENT: Monthly distribution from yearly totals
@@ -136,21 +133,25 @@ class DataProcessor:
         """
         monthly_records = []
         
-        for _, row in city_yearly_df.iterrows():
-            city = row['city']
+        for _, row in state_yearly_df.iterrows():
+            state = row['state']
             
-            # Process each year
-            for year in [2018, 2019, 2020, 2021, 2022]:
-                yearly_total = row[str(year)]
+            # Process each year from 2016 to 2025
+            for year in range(2016, 2026):
+                yearly_total = int(row[str(year)])
                 
                 # Generate 12 monthly values using seasonality + controlled randomness
                 monthly_values = self._distribute_yearly_to_monthly(yearly_total)
                 
+                # Determine how many months to generate
+                # Full year for 2016-2024, only up to June (6 months) for 2025
+                months_to_generate = 6 if year == 2025 else 12
+                
                 # Create records for each month
-                for month in range(1, 13):
+                for month in range(1, months_to_generate + 1):
                     date_str = f"{year}-{month:02d}-01"
                     monthly_records.append({
-                        'city': city,
+                        'state': state,  # Changed from city to state
                         'date': date_str,
                         'year': year,
                         'month': month,
@@ -164,11 +165,14 @@ class DataProcessor:
         # Distribute yearly total across 12 months with seasonality and variation.
         # Ensures monthly sum equals yearly total.
 
+        # Ensure yearly_total is int
+        yearly_total = int(yearly_total)
+
         # Apply seasonality factors
         base_monthly = [yearly_total * (factor / 12) for factor in MONTHLY_SEASONALITY]
         
         # Add controlled random variation (±10%)
-        np.random.seed(int(yearly_total))  # Reproducible randomness
+        np.random.seed(yearly_total)  # Reproducible randomness
         variation = np.random.uniform(0.9, 1.1, 12)
         monthly = [int(base * var) for base, var in zip(base_monthly, variation)]
         
@@ -178,11 +182,19 @@ class DataProcessor:
         
         # Distribute difference across months
         if diff != 0:
-            adjustment_per_month = diff // 12
-            remainder = diff % 12
-            monthly = [m + adjustment_per_month for m in monthly]
-            for i in range(abs(remainder)):
-                monthly[i] += (1 if diff > 0 else -1)
+            # Handle positive and negative differences correctly
+            sign = 1 if diff > 0 else -1
+            abs_diff = abs(diff)
+            
+            adjustment_per_month = abs_diff // 12
+            remainder = abs_diff % 12
+            
+            # Apply base adjustment to all months
+            monthly = [m + (adjustment_per_month * sign) for m in monthly]
+            
+            # Distribute remainder
+            for i in range(remainder):
+                monthly[i] += sign
         
         return monthly
     
@@ -252,14 +264,14 @@ class DataProcessor:
         # Step 1: Load raw datasets
         self.load_datasets()
         
-        # Step 2: Map states to cities (SYNTHETIC)
-        print("\nMapping states to cities...")
-        city_yearly = self.map_states_to_cities()
-        print(f"✓ Generated data for {len(city_yearly)} city-year combinations")
+        # Step 2: Generate synthetic yearly data (State-level)
+        print("\nGenerating synthetic yearly data (2016-2025)...")
+        state_yearly = self.generate_synthetic_yearly_data()
+        print(f"✓ Generated data for {len(state_yearly)} state-year combinations")
         
         # Step 3: Generate monthly data (SYNTHETIC with REAL yearly totals)
         print("\nGenerating monthly data from yearly totals...")
-        monthly_data = self.generate_monthly_data(city_yearly)
+        monthly_data = self.generate_monthly_data(state_yearly)
         print(f"✓ Generated {len(monthly_data)} monthly records")
         
         # Step 4: Add crime type breakdown (based on REAL proportions)
@@ -268,55 +280,84 @@ class DataProcessor:
         print(f"✓ Added {len(FRONTEND_CRIME_TYPES)} crime type categories")
         
         # Validation
-        self._validate_data(city_yearly, enhanced_data)
+        self._validate_data(state_yearly, enhanced_data)
         
         self.processed_data = enhanced_data
         return enhanced_data
     
-    def _validate_data(self, city_yearly, monthly_data):
+    def _validate_data(self, state_yearly, monthly_data):
         """Validate that monthly totals match yearly totals"""
         print("\nValidating data integrity...")
         
-        for city in city_yearly['city'].unique():
-            city_yearly_subset = city_yearly[city_yearly['city'] == city]
-            city_monthly_subset = monthly_data[monthly_data['city'] == city]
+        for state in state_yearly['state'].unique():
+            state_yearly_subset = state_yearly[state_yearly['state'] == state]
+            state_monthly_subset = monthly_data[monthly_data['state'] == state]
             
-            for year in [2018, 2019, 2020, 2021, 2022]:
-                yearly_total = city_yearly_subset[str(year)].sum()
-                monthly_total = city_monthly_subset[
-                    city_monthly_subset['year'] == year
+            # Validate 2016-2024 (Full years)
+            for year in range(2016, 2025):
+                yearly_total = state_yearly_subset[str(year)].sum()
+                monthly_total = state_monthly_subset[
+                    state_monthly_subset['year'] == year
                 ]['incidents'].sum()
                 
                 if abs(yearly_total - monthly_total) > 1:  # Allow 1 incident rounding error
-                    print(f"⚠ Mismatch for {city} {year}: {yearly_total} vs {monthly_total}")
+                    print(f"⚠ Mismatch for {state} {year}: {yearly_total} vs {monthly_total}")
+
+            # Validate 2025 (Partial year - only compare if we want exact match, 
+            # but here yearly_total is for full year, monthly is for 6 months)
+            # We skip exact validation for 2025 total matching since we only generated 6 months
+            # But we could check if monthly_total ≈ 0.5 * yearly_total (roughly)
         
         print("✓ Data validation complete")
 
     # DATA RETRIEVAL METHODS
 
     
-    def get_incidents_by_region(self, region="All Regions"):
-        """Get incident data filtered by region"""
+    def get_incidents_by_region(self, region="All Regions", year="all"):
+        """Get incident data filtered by region and year"""
         if self.processed_data is None:
             self.process_all_data()
         
-        if region == "All Regions":
-            # Aggregate all cities
-            return self.processed_data.groupby(['date', 'year', 'month']).agg({
+        # Start with all data
+        df = self.processed_data.copy()
+        
+        # Filter by Region
+        if region != "All Regions":
+            df = df[df['state'] == region]
+            
+        # Filter by Year
+        if year != "all":
+            try:
+                year_int = int(year)
+                df = df[df['year'] == year_int]
+            except ValueError:
+                # Handle non-integer year or other formats if necessary
+                pass
+        
+        if region == "All Regions" and year == "all":
+             # Aggregate all states for all years
+            return df.groupby(['date', 'year', 'month']).agg({
                 'incidents': 'sum',
                 **{crime: 'sum' for crime in FRONTEND_CRIME_TYPES}
             }).reset_index()
-        else:
-            # Single city
-            return self.processed_data[self.processed_data['city'] == region].copy()
+            
+        elif region == "All Regions":
+             # Aggregate all states for specific year
+             return df.groupby(['date', 'year', 'month']).agg({
+                'incidents': 'sum',
+                **{crime: 'sum' for crime in FRONTEND_CRIME_TYPES}
+            }).reset_index()
+
+        # Specific region (already filtered), specific year (already filtered)
+        return df
     
     def get_available_regions(self):
-        """Get list of available cities"""
+        """Get list of available states"""
         if self.processed_data is None:
             self.process_all_data()
         
-        cities = sorted(self.processed_data['city'].unique().tolist())
-        return ["All Regions"] + cities
+        states = sorted(self.processed_data['state'].unique().tolist())
+        return ["All Regions"] + states
     
     def get_crime_types(self):
         """Get list of crime types"""

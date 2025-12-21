@@ -14,8 +14,10 @@ interface FilterControlsProps {
   crimeTypes: string[];
   selectedRegion: string;
   selectedCrimeType: string;
+  selectedYear: string;
   onRegionChange: (value: string) => void;
   onCrimeTypeChange: (value: string) => void;
+  onYearChange: (value: string) => void;
 }
 
 const FilterControls = ({
@@ -23,8 +25,10 @@ const FilterControls = ({
   crimeTypes,
   selectedRegion,
   selectedCrimeType,
+  selectedYear,
   onRegionChange,
   onCrimeTypeChange,
+  onYearChange,
 }: FilterControlsProps) => {
   return (
     <Card className="transition-all duration-300 hover:shadow-md">
@@ -72,18 +76,25 @@ const FilterControls = ({
 
           <div className="space-y-2">
             <Label htmlFor="date-range" className="text-sm text-muted-foreground">
-              Date Range
+              Year
             </Label>
-            <Select defaultValue="2024">
+            <Select value={selectedYear} onValueChange={onYearChange}>
               <SelectTrigger id="date-range">
                 <Calendar className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Select period" />
+                <SelectValue placeholder="Select year" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="2024">Year 2024</SelectItem>
-                <SelectItem value="q4-2024">Q4 2024</SelectItem>
-                <SelectItem value="q3-2024">Q3 2024</SelectItem>
-                <SelectItem value="q2-2024">Q2 2024</SelectItem>
+                <SelectItem value="all">All Years</SelectItem>
+                <SelectItem value="2025">2025 (Partial)</SelectItem>
+                <SelectItem value="2024">2024</SelectItem>
+                <SelectItem value="2023">2023</SelectItem>
+                <SelectItem value="2022">2022</SelectItem>
+                <SelectItem value="2021">2021</SelectItem>
+                <SelectItem value="2020">2020</SelectItem>
+                <SelectItem value="2019">2019</SelectItem>
+                <SelectItem value="2018">2018</SelectItem>
+                <SelectItem value="2017">2017</SelectItem>
+                <SelectItem value="2016">2016</SelectItem>
               </SelectContent>
             </Select>
           </div>
