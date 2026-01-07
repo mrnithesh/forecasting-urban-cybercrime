@@ -14,6 +14,34 @@ from flask_cors import CORS
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+from langchain_community.tools import DuckDuckGoSearchRun
+from langgraph.prebuilt import create_react_agent
+from langchain_core.messages import SystemMessage
+
+# Import the new agent components
+from agent.graph import get_agent_graph
+from agent.memory import session_memory
+
+# Load environment variables
+load_dotenv()
+
+# Configure OpenRouter/OpenAI
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "xiaomi/mimo-v2-flash:free")
+
+if not OPENROUTER_API_KEY:
+    print("WARNING: OPENROUTER_API_KEY not found in environment variables. Chat functionality will not work.")
+
+# Initialize LangGraph Agent via the new structure
+try:
+    print("Initializing Agent Graph...")
+    agent_graph = get_agent_graph()
+    print("Agent Graph initialized.")
+except Exception as e:
+    print(f"CRITICAL ERROR initializing agent graph: {e}")
+    agent_graph = None
 
 # Add backend to path
 sys.path.append(str(Path(__file__).parent))
@@ -371,6 +399,90 @@ def clear_cache():
         forecaster.clear_cache()
         return jsonify({'message': 'Cache cleared successfully'})
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    """
+    Chat endpoint using LangGraph Agent and OpenRouter with Session Memory
+    """
+    try:
+        if not agent_graph:
+            print("ERROR: Agent graph is None. Initialization failed.")
+            return jsonify({'error': 'Chat agent not initialized correctly.'}), 500
+
+        data = request.json
+        user_message = data.get('message', '')
+        # Simple session ID for now (IP-based or fixed demo ID)
+        # In production, this would come from an auth token or cookie
+        session_id = request.remote_addr or "demo_user"
+
+        if not user_message:
+            return jsonify({'error': 'Message is required'}), 400
+
+        print(f"Chat request from {session_id}: {user_message}")
+
+        # Retrieve history
+        if not session_memory.session_exists(session_id):
+            session_memory.create_session(session_id)
+        
+        # Get existing messages
+        history = session_memory.get_history(session_id)
+        
+        # Run the agent
+        try:
+            # Prepare input state
+            # Note: We don't append the new user message to history MANUALLY here if the graph handles it, 
+            # but usually we pass the full history including the new message to the graph.
+            
+            # Create a HumanMessage for the new input
+            from langchain_core.messages import HumanMessage
+            new_msg = HumanMessage(content=user_message)
+            
+            # Combine history + new message
+            messages_to_process = history + [new_msg]
+            
+            print("Invoking agent...")
+            # Invoke the graph with the full message list
+            result = agent_graph.invoke({"messages": messages_to_process})
+            print("Agent execution successful.")
+            
+            # The result state contains the full updated list of messages (including tool calls, etc.)
+            updated_messages = result["messages"]
+            
+            # Update session memory with the NEW messages only?
+            # Or just replace the whole history with the updated state?
+            # Replacing is safer to capture intermediate tool steps if we want them.
+            # But our session_memory is append-only helper, let's just clear and set?
+            # For simplicity in this implementation, let's just update our memory
+            # with the difference or just store the latest state.
+            
+            # Actually, `session_memory` is a simple wrapper. Let's just update the internal list if we can,
+            # or more simply: clear and re-add all messages from the graph state to stay in sync.
+            session_memory.clear_session(session_id)
+            for msg in updated_messages:
+                session_memory.add_message(session_id, msg)
+            
+            # Extract the last message content which is the assistant's response
+            response_text = updated_messages[-1].content
+            print(f"Response length: {len(response_text)}")
+            
+        except Exception as e:
+            print(f"CRITICAL: Agent execution error: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({'error': f"Agent error: {str(e)}"}), 500
+
+        return jsonify({
+            'response': response_text,
+            'sources': [] 
+        })
+
+    except Exception as e:
+        print(f"CRITICAL: Chat endpoint outer error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
