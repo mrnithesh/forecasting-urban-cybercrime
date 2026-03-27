@@ -93,7 +93,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <DashboardHeader />
 
-      <main className="container mx-auto px-6 py-8 space-y-8">
+      <main className="container mx-auto px-6 py-8 space-y-8 dashboard-main-bg rounded-2xl">
         {/* Error Banner */}
         {error && (
           <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded relative">
@@ -112,43 +112,57 @@ const Index = () => {
         ) : (
           <>
             {/* Risk Banner */}
-            <RiskBanner riskLevel={stats.riskLevel} />
+            <div className="motion-section" style={{ animationDelay: "40ms" }}>
+              <RiskBanner riskLevel={stats.riskLevel} />
+            </div>
 
             {/* Key Statistics */}
-            <StatsCards
-              totalIncidents={stats.totalIncidents}
-              mostCommonType={stats.mostCommonType}
-              topRegion={stats.topRegion}
-              riskLevel={stats.riskLevel}
-            />
+            <div className="motion-section" style={{ animationDelay: "120ms" }}>
+              <StatsCards
+                totalIncidents={stats.totalIncidents}
+                mostCommonType={stats.mostCommonType}
+                topRegion={stats.topRegion}
+                riskLevel={stats.riskLevel}
+              />
+            </div>
 
             {/* Filter Controls */}
-            <FilterControls
-              regions={regions}
-              crimeTypes={crimeTypes}
-              selectedRegion={selectedRegion}
-              selectedCrimeType={selectedCrimeType}
-              selectedYear={selectedYear}
-              onRegionChange={setSelectedRegion}
-              onCrimeTypeChange={setSelectedCrimeType}
-              onYearChange={setSelectedYear}
-            />
+            <div className="motion-section" style={{ animationDelay: "180ms" }}>
+              <FilterControls
+                regions={regions}
+                crimeTypes={crimeTypes}
+                selectedRegion={selectedRegion}
+                selectedCrimeType={selectedCrimeType}
+                selectedYear={selectedYear}
+                onRegionChange={setSelectedRegion}
+                onCrimeTypeChange={setSelectedCrimeType}
+                onYearChange={setSelectedYear}
+              />
+            </div>
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <IncidentTrendChart data={trendData} />
-              <CrimeTypeChart data={crimeTypeData} />
+              <div className="motion-section" style={{ animationDelay: "240ms" }}>
+                <IncidentTrendChart data={trendData} />
+              </div>
+              <div className="motion-section" style={{ animationDelay: "300ms" }}>
+                <CrimeTypeChart data={crimeTypeData} />
+              </div>
             </div>
 
             {/* Regional and Forecast */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <RegionalHeatmap data={regionalData} />
-              <ForecastChart data={forecastData} />
+              <div className="motion-section" style={{ animationDelay: "360ms" }}>
+                <RegionalHeatmap data={regionalData} />
+              </div>
+              <div className="motion-section" style={{ animationDelay: "420ms" }}>
+                <ForecastChart data={forecastData} />
+              </div>
             </div>
 
             {/* Data Source Attribution */}
             {useApi && (
-              <div className="text-center text-sm text-muted-foreground">
+              <div className="motion-section text-center text-sm text-muted-foreground" style={{ animationDelay: "480ms" }}>
                 Data powered by Prophet forecasting model • Based on NCRB cybercrime statistics
               </div>
             )}

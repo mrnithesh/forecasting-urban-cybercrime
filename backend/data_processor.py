@@ -86,7 +86,7 @@ class DataProcessor:
    
     def generate_synthetic_yearly_data(self):
         """
-        Extend yearly data to include 2016-2017 (backcasting) and 2023-2025 (forecasting).
+        Extend yearly data to include 2016-2017 (backcasting) and 2023-2026 (forecasting).
         SYNTHETIC COMPONENT: Yearly totals extension
         """
         extended_data = []
@@ -111,11 +111,12 @@ class DataProcessor:
             base_data['2017'] = int(base_2018 * 0.90)
             base_data['2016'] = int(base_data['2017'] * 0.90)
             
-            # Forecast 2023-2025 (~10% growth per year forwards)
+            # Forecast 2023-2026 (~10% growth per year forwards)
             base_2022 = base_data['2022']
             base_data['2023'] = int(base_2022 * 1.10)
             base_data['2024'] = int(base_data['2023'] * 1.10)
             base_data['2025'] = int(base_data['2024'] * 1.10)
+            base_data['2026'] = int(base_data['2025'] * 1.10)
             
             record = {'state': state_name}
             record.update(base_data)
@@ -136,16 +137,16 @@ class DataProcessor:
         for _, row in state_yearly_df.iterrows():
             state = row['state']
             
-            # Process each year from 2016 to 2025
-            for year in range(2016, 2026):
+            # Process each year from 2016 to early 2026
+            for year in range(2016, 2027):
                 yearly_total = int(row[str(year)])
                 
                 # Generate 12 monthly values using seasonality + controlled randomness
                 monthly_values = self._distribute_yearly_to_monthly(yearly_total)
                 
                 # Determine how many months to generate
-                # Full year for 2016-2024, only up to November (11 months) for 2025
-                months_to_generate = 11 if year == 2025 else 12
+                # Full year for 2016-2025, only Jan-Mar (3 months) for 2026
+                months_to_generate = 3 if year == 2026 else 12
                 
                 # Create records for each month
                 for month in range(1, months_to_generate + 1):
@@ -265,7 +266,7 @@ class DataProcessor:
         self.load_datasets()
         
         # Step 2: Generate synthetic yearly data (State-level)
-        print("\nGenerating synthetic yearly data (2016-2025)...")
+        print("\nGenerating synthetic yearly data (2016-2026)...")
         state_yearly = self.generate_synthetic_yearly_data()
         print(f"✓ Generated data for {len(state_yearly)} state-year combinations")
         
@@ -293,8 +294,8 @@ class DataProcessor:
             state_yearly_subset = state_yearly[state_yearly['state'] == state]
             state_monthly_subset = monthly_data[monthly_data['state'] == state]
             
-            # Validate 2016-2024 (Full years)
-            for year in range(2016, 2025):
+            # Validate 2016-2025 (Full years)
+            for year in range(2016, 2026):
                 yearly_total = state_yearly_subset[str(year)].sum()
                 monthly_total = state_monthly_subset[
                     state_monthly_subset['year'] == year
@@ -303,10 +304,7 @@ class DataProcessor:
                 if abs(yearly_total - monthly_total) > 1:  # Allow 1 incident rounding error
                     print(f"⚠ Mismatch for {state} {year}: {yearly_total} vs {monthly_total}")
 
-            # Validate 2025 (Partial year - only compare if we want exact match, 
-            # but here yearly_total is for full year, monthly is for 11 months)
-            # We skip exact validation for 2025 total matching since we only generated 11 months
-            # But we could check if monthly_total ≈ 11/12 * yearly_total (roughly)
+            # Validate 2026 is partial year (Jan-Mar only), so skip full-year equality checks
         
         print("✓ Data validation complete")
 

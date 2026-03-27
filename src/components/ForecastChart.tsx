@@ -7,7 +7,7 @@ interface ForecastChartProps {
 
 const ForecastChart = ({ data }: ForecastChartProps) => {
   return (
-    <Card className="transition-all duration-300 hover:shadow-md">
+    <Card className="motion-card transition-all duration-300 hover:shadow-md">
       <CardHeader>
         <CardTitle>Forecast Visualization</CardTitle>
         <CardDescription>Actual vs. predicted incident trends (Prophet Model)</CardDescription>

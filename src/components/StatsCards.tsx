@@ -46,9 +46,13 @@ const StatsCards = ({
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 motion-stagger">
       {stats.map((stat, index) => (
-        <Card key={index} className="transition-all duration-300 hover:shadow-md">
+        <Card
+          key={index}
+          className="motion-card transition-all duration-300 hover:shadow-md"
+          style={{ animationDelay: `${120 + index * 80}ms` }}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {stat.title}

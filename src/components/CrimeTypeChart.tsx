@@ -7,7 +7,7 @@ interface CrimeTypeChartProps {
 
 const CrimeTypeChart = ({ data }: CrimeTypeChartProps) => {
   return (
-    <Card className="transition-all duration-300 hover:shadow-md">
+    <Card className="motion-card transition-all duration-300 hover:shadow-md">
       <CardHeader>
         <CardTitle>Cybercrime Types Comparison</CardTitle>
         <CardDescription>Distribution of attack types across all regions</CardDescription>

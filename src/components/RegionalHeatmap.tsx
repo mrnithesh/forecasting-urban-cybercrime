@@ -22,7 +22,7 @@ const RegionalHeatmap = ({ data }: RegionalHeatmapProps) => {
   const maxIncidents = Math.max(...data.map((d) => d.incidents));
 
   return (
-    <Card className="transition-all duration-300 hover:shadow-md">
+    <Card className="motion-card transition-all duration-300 hover:shadow-md">
       <CardHeader>
         <CardTitle>State-wise Distribution</CardTitle>
         <CardDescription>Incident count and risk level by state</CardDescription>

@@ -7,7 +7,7 @@ interface IncidentTrendChartProps {
 
 const IncidentTrendChart = ({ data }: IncidentTrendChartProps) => {
   return (
-    <Card className="transition-all duration-300 hover:shadow-md">
+    <Card className="motion-card transition-all duration-300 hover:shadow-md">
       <CardHeader>
         <CardTitle>Incident Trends Over Time</CardTitle>
         <CardDescription>Monthly cybercrime incidents in 2024</CardDescription>
